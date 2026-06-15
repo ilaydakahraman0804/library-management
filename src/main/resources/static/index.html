@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibraSystem - Giriş</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#fafaf5;display:flex;justify-content:center;align-items:center;min-height:100vh}
+        .card{background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:40px;width:400px}
+        .logo{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917;margin-bottom:4px}
+        .subtitle{font-size:13px;color:#78716c;margin-bottom:32px}
+        label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}
+        input{width:100%;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;color:#1c1917;margin-bottom:16px}
+        input:focus{border-color:#d97706}
+        .btn{width:100%;padding:11px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;margin-top:4px}
+        .btn:hover{background:#78350f}
+        .error{background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;display:none}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">📚 LibraSystem</div>
+    <div class="subtitle">Kütüphane Yönetim Sistemine Hoş Geldiniz</div>
+    <div class="error" id="err"></div>
+    <label>Kullanıcı Adı</label>
+    <input type="text" id="username" placeholder="Kullanıcı adınızı girin"/>
+    <label>Şifre</label>
+    <input type="password" id="password" placeholder="Şifrenizi girin"/>
+    <button class="btn" onclick="login()">Giriş Yap</button>
+</div>
+<script>
+    if(localStorage.getItem('token')) window.location.href='/dashboard.html';
+    async function login(){
+        const username=document.getElementById('username').value;
+        const password=document.getElementById('password').value;
+        const err=document.getElementById('err');
+        try{
+            const res=await fetch('/api/users/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+            const data=await res.json();
+            if(res.ok){
+                localStorage.setItem('token',data.token);
+                localStorage.setItem('username',data.username);
+                localStorage.setItem('role',data.role);
+                window.location.href='/dashboard.html';
+            }else{
+                err.style.display='block';
+                err.textContent=typeof data==='string'?data:'Giriş başarısız!';
+            }
+        }catch(e){err.style.display='block';err.textContent='Bağlantı hatası!';}
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibraSystem - Raporlar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#fafaf5;display:flex;min-height:100vh}
+        .sidebar{width:220px;background:#fff;border-right:1px solid #e7e5e4;padding:24px 16px;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column}
+        .logo{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:32px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:#6b7280;margin-bottom:4px;cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:#fef3c7;color:#92400e}
+        .nav-item.active{background:#fef3c7;color:#92400e;font-weight:500}
+        .logout{margin-top:auto;padding:10px 12px;border-radius:8px;font-size:14px;color:#e11d48;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-align:left}
+        .main{margin-left:220px;padding:32px;flex:1}
+        .header{margin-bottom:28px}
+        .header h1{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917}
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+        .stat{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:20px;border-left:3px solid #d97706}
+        .stat-val{font-size:26px;font-weight:600;color:#92400e}
+        .stat-lbl{font-size:12px;color:#78716c;margin-top:4px}
+        .section{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:16px;margin-top:28px}
+        .table-wrap{background:#fff;border:1px solid #e7e5e4;border-radius:12px;overflow:hidden;margin-bottom:24px}
+        table{width:100%;border-collapse:collapse}
+        th{background:#fef9f0;padding:12px 16px;font-size:12px;color:#78716c;text-align:left;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+        td{padding:12px 16px;font-size:13px;color:#374151;border-top:1px solid #f5f5f0}
+        .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+        .available{background:#fef3c7;color:#92400e}
+        .overdue{background:#fff1f2;color:#e11d48}
+        .btn{padding:10px 20px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:16px}
+        .toast{position:fixed;bottom:24px;right:24px;background:#1c1917;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200}
+        .monthly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+        .month-card{background:#fff;border:1px solid #e7e5e4;border-radius:10px;padding:16px}
+        .month-name{font-size:13px;color:#78716c;margin-bottom:4px}
+        .month-val{font-size:20px;font-weight:600;color:#92400e}
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo">📚 LibraSystem</div>
+    <a class="nav-item" href="/dashboard.html">Ana Sayfa</a>
+    <a class="nav-item" href="/books.html">Kitaplar</a>
+    <a class="nav-item" href="/borrow.html">Ödünç İşlemleri</a>
+    <a class="nav-item" href="/reservations.html">Rezervasyonlar</a>
+    <a class="nav-item" href="/users.html">Kullanıcılar</a>
+    <a class="nav-item active" href="/reports.html">Raporlar</a>
+    <button class="logout" onclick="logout()">Çıkış Yap</button>
+</div>
+<div class="main">
+    <div class="header"><h1>Raporlar</h1></div>
+    <div class="stats">
+        <div class="stat"><div class="stat-val" id="totalBooks">-</div><div class="stat-lbl">Toplam Kitap</div></div>
+        <div class="stat"><div class="stat-val" id="availableBooks">-</div><div class="stat-lbl">Müsait Kitap</div></div>
+        <div class="stat"><div class="stat-val" id="activeBorrows">-</div><div class="stat-lbl">Aktif Ödünç</div></div>
+        <div class="stat"><div class="stat-val" id="overdueBooks">-</div><div class="stat-lbl">Gecikmiş Kitap</div></div>
+    </div>
+    <button class="btn" onclick="checkOverdue()">Gecikmiş Kitapları Güncelle</button>
+    <div class="section">Ödünç Alınan Kitaplar</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Kitap</th><th>Kullanıcı</th><th>Ödünç Tarihi</th><th>Son Teslim</th><th>Durum</th></tr></thead>
+            <tbody id="borrowed-table"></tbody>
+        </table>
+    </div>
+    <div class="section">Gecikmiş Kitaplar</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Kitap</th><th>Kullanıcı</th><th>Son Teslim</th></tr></thead>
+            <tbody id="overdue-table"></tbody>
+        </table>
+    </div>
+    <div class="section">Aylık İstatistikler</div>
+    <div class="monthly-grid" id="monthly-grid"></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    const token=localStorage.getItem('token');
+    if(!token){window.location.href='/';}
+
+    async function api(url,method='GET',body=null){
+        const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
+        if(body)opts.body=JSON.stringify(body);
+        const res=await fetch(url,opts);
+        return res.json();
+    }
+
+    function showToast(msg){
+        const t=document.getElementById('toast');
+        t.textContent=msg;t.style.display='block';
+        setTimeout(()=>t.style.display='none',3000);
+    }
+
+    async function loadSummary(){
+        const data=await api('/api/reports/summary');
+        document.getElementById('totalBooks').textContent=data.totalBooks?.toLocaleString()||'-';
+        document.getElementById('availableBooks').textContent=data.availableBooks?.toLocaleString()||'-';
+        document.getElementById('activeBorrows').textContent=data.activeBorrows?.toLocaleString()||'-';
+        document.getElementById('overdueBooks').textContent=data.overdueBooks?.toLocaleString()||'-';
+    }
+
+    async function loadBorrowed(){
+        const data=await api('/api/reports/borrowed');
+        const tbody=document.getElementById('borrowed-table');
+        if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#78716c;padding:24px">Ödünç alınan kitap yok</td></tr>';return;}
+        tbody.innerHTML=data.slice(0,10).map(t=>`
+            <tr>
+                <td>${t.book?.bookTitle||'-'}</td>
+                <td>${t.user?.username||'-'}</td>
+                <td>${t.borrowDate||'-'}</td>
+                <td>${t.dueDate||'-'}</td>
+                <td><span class="badge available">Ödünç</span></td>
+            </tr>`).join('');
+    }
+
+    async function loadOverdue(){
+        const data=await api('/api/reports/overdue');
+        const tbody=document.getElementById('overdue-table');
+        if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:#78716c;padding:24px">Gecikmiş kitap yok</td></tr>';return;}
+        tbody.innerHTML=data.slice(0,10).map(t=>`
+            <tr>
+                <td>${t.book?.bookTitle||'-'}</td>
+                <td>${t.user?.username||'-'}</td>
+                <td>${t.dueDate||'-'}</td>
+            </tr>`).join('');
+    }
+
+    async function loadMonthly(){
+        const data=await api('/api/reports/monthly-stats');
+        const grid=document.getElementById('monthly-grid');
+        const entries=Object.entries(data).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+        if(entries.length===0){grid.innerHTML='<p style="color:#78716c;font-size:13px">Henüz veri yok</p>';return;}
+        grid.innerHTML=entries.map(([month,count])=>`
+            <div class="month-card">
+                <div class="month-name">${month}</div>
+                <div class="month-val">${count} ödünç</div>
+            </div>`).join('');
+    }
+
+    async function checkOverdue(){
+        const data=await api('/api/reports/check-overdue','GET');
+        showToast(data.updatedToOverdue+' kitap gecikmiş olarak işaretlendi');
+        loadSummary();loadOverdue();
+    }
+
+    function logout(){localStorage.clear();window.location.href='/';}
+
+    loadSummary();loadBorrowed();loadOverdue();loadMonthly();
+</script>
+</body>
+</html>

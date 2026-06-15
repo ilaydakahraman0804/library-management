@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibraSystem - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#fafaf5;display:flex;min-height:100vh}
+        .sidebar{width:220px;background:#fff;border-right:1px solid #e7e5e4;padding:24px 16px;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column}
+        .logo{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:32px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:#6b7280;margin-bottom:4px;cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:#fef3c7;color:#92400e}
+        .nav-item.active{background:#fef3c7;color:#92400e;font-weight:500}
+        .logout{margin-top:auto;padding:10px 12px;border-radius:8px;font-size:14px;color:#e11d48;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-align:left}
+        .main{margin-left:220px;padding:32px;flex:1}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+        .header h1{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917}
+        .user-badge{background:#fef3c7;color:#92400e;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500}
+        .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+        .stat{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:20px;border-left:3px solid #d97706}
+        .stat-val{font-size:26px;font-weight:600;color:#92400e}
+        .stat-lbl{font-size:12px;color:#78716c;margin-top:4px}
+        .section{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:16px}
+        .search-bar{display:flex;gap:8px;margin-bottom:20px}
+        .search-bar input{flex:1;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none}
+        .search-bar input:focus{border-color:#d97706}
+        .search-bar button{padding:10px 20px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif}
+        .books-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:32px}
+        .book-card{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:16px}
+        .book-title{font-size:14px;font-weight:500;color:#1c1917;margin-bottom:3px}
+        .book-author{font-size:12px;color:#78716c;margin-bottom:10px}
+        .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+        .available{background:#fef3c7;color:#92400e}
+        .borrowed{background:#fff1f2;color:#e11d48}
+        .action-row{display:flex;gap:8px;margin-top:12px}
+        .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+        .btn-primary{background:#92400e;color:#fff}
+        .btn-outline{background:none;border:1px solid #e7e5e4;color:#6b7280}
+        .table-wrap{background:#fff;border:1px solid #e7e5e4;border-radius:12px;overflow:hidden}
+        table{width:100%;border-collapse:collapse}
+        th{background:#fef9f0;padding:12px 16px;font-size:12px;color:#78716c;text-align:left;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+        td{padding:12px 16px;font-size:13px;color:#374151;border-top:1px solid #f5f5f0}
+        .tag{display:inline-block;padding:2px 10px;border-radius:4px;font-size:11px}
+        .tag-admin{background:#fef3c7;color:#92400e}
+        .tag-student{background:#eff6ff;color:#2563eb}
+        .tag-librarian{background:#f0fdf4;color:#16a34a}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:100;justify-content:center;align-items:center}
+        .modal.open{display:flex}
+        .modal-card{background:#fff;border-radius:16px;padding:32px;width:440px}
+        .modal-title{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:20px}
+        .modal input,.modal select{width:100%;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px}
+        .modal-btns{display:flex;gap:8px;margin-top:8px}
+        .toast{position:fixed;bottom:24px;right:24px;background:#1c1917;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200}
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo">📚 LibraSystem</div>
+    <a class="nav-item active" href="/dashboard.html">Ana Sayfa</a>
+    <a class="nav-item" href="/books.html">Kitaplar</a>
+    <a class="nav-item" href="/borrow.html">Ödünç İşlemleri</a>
+    <a class="nav-item" href="/reservations.html">Rezervasyonlar</a>
+    <a class="nav-item" href="/users.html">Kullanıcılar</a>
+    <a class="nav-item" href="/reports.html">Raporlar</a>
+    <button class="logout" onclick="logout()">Çıkış Yap</button>
+</div>
+<div class="main">
+    <div class="header">
+        <h1>Genel Bakış</h1>
+        <div class="user-badge" id="user-badge"></div>
+    </div>
+    <div class="stats">
+        <div class="stat"><div class="stat-val" id="totalBooks">-</div><div class="stat-lbl">Toplam Kitap</div></div>
+        <div class="stat"><div class="stat-val" id="availableBooks">-</div><div class="stat-lbl">Müsait Kitap</div></div>
+        <div class="stat"><div class="stat-val" id="activeBorrows">-</div><div class="stat-lbl">Ödünç Alınan</div></div>
+        <div class="stat"><div class="stat-val" id="totalUsers">-</div><div class="stat-lbl">Kullanıcı</div></div>
+    </div>
+    <div class="section">Kitap Ara</div>
+    <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Kitap adı veya yazar ara..."/>
+        <button onclick="searchBooks()">Ara</button>
+    </div>
+    <div class="books-grid" id="books-grid"></div>
+    <div class="section">Kullanıcılar</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Kullanıcı</th><th>Email</th><th>Rol</th></tr></thead>
+            <tbody id="users-table"></tbody>
+        </table>
+    </div>
+</div>
+<div class="modal" id="borrow-modal">
+    <div class="modal-card">
+        <div class="modal-title">Kitap Ödünç Al</div>
+        <p style="font-size:13px;color:#78716c;margin-bottom:16px" id="borrow-book-title"></p>
+        <input type="number" id="borrow-user-id" placeholder="Kullanıcı ID"/>
+        <div class="modal-btns">
+            <button class="btn-sm btn-primary" onclick="confirmBorrow()">Ödünç Al</button>
+            <button class="btn-sm btn-outline" onclick="closeModal()">İptal</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    const token=localStorage.getItem('token');
+    const username=localStorage.getItem('username');
+    const role=localStorage.getItem('role');
+    if(!token){window.location.href='/';}
+    document.getElementById('user-badge').textContent=username+' ('+role+')';
+    let selectedIsbn='';
+
+    async function api(url,method='GET',body=null){
+        const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
+        if(body)opts.body=JSON.stringify(body);
+        const res=await fetch(url,opts);
+        return res.json();
+    }
+
+    function showToast(msg){
+        const t=document.getElementById('toast');
+        t.textContent=msg;t.style.display='block';
+        setTimeout(()=>t.style.display='none',3000);
+    }
+
+    async function loadStats(){
+        const data=await api('/api/reports/summary');
+        document.getElementById('totalBooks').textContent=data.totalBooks?.toLocaleString()||'-';
+        document.getElementById('availableBooks').textContent=data.availableBooks?.toLocaleString()||'-';
+        document.getElementById('activeBorrows').textContent=data.activeBorrows?.toLocaleString()||'-';
+        document.getElementById('totalUsers').textContent=data.totalUsers?.toLocaleString()||'-';
+    }
+
+    async function loadBooks(query=''){
+        const url=query?'/api/books/search/title?title='+encodeURIComponent(query):'/api/books?size=6';
+        const data=await api(url);
+        const books=Array.isArray(data)?data.slice(0,6):[];
+        const grid=document.getElementById('books-grid');
+        grid.innerHTML=books.map(b=>`
+            <div class="book-card">
+                <div class="book-title">${b.bookTitle||b.book_title||''}</div>
+                <div class="book-author">${b.bookAuthor||b.book_author||''}</div>
+                <span class="badge ${b.available?'available':'borrowed'}">${b.available?'Müsait':'Ödünç Alındı'}</span>
+                <div class="action-row">
+                    ${b.available?`<button class="btn-sm btn-primary" onclick="openBorrow('${b.isbn}','${(b.bookTitle||'').replace(/'/g,"\\'")}')">Ödünç Al</button>`:''}
+                    ${!b.available?`<button class="btn-sm btn-outline" onclick="reserve('${b.isbn}')">Rezerve Et</button>`:''}
+                    <button class="btn-sm btn-outline">Detay</button>
+                </div>
+            </div>`).join('');
+    }
+
+    async function loadUsers(){
+        const data=await api('/api/users');
+        const tbody=document.getElementById('users-table');
+        const users=Array.isArray(data)?data.slice(0,5):[];
+        tbody.innerHTML=users.map(u=>`
+            <tr>
+                <td>${u.username}</td>
+                <td>${u.email}</td>
+                <td><span class="tag tag-${u.role?.toLowerCase()}">${u.role}</span></td>
+            </tr>`).join('');
+    }
+
+    function searchBooks(){
+        const q=document.getElementById('search-input').value;
+        loadBooks(q);
+    }
+
+    function openBorrow(isbn,title){
+        selectedIsbn=isbn;
+        document.getElementById('borrow-book-title').textContent=title;
+        document.getElementById('borrow-modal').classList.add('open');
+    }
+
+    function closeModal(){
+        document.getElementById('borrow-modal').classList.remove('open');
+    }
+
+    async function confirmBorrow(){
+        const userId=document.getElementById('borrow-user-id').value;
+        if(!userId){showToast('Kullanıcı ID girin!');return;}
+        const data=await api('/api/borrow?userId='+userId+'&isbn='+selectedIsbn,'POST');
+        closeModal();
+        showToast(data.id?'Kitap ödünç alındı!':'Hata: '+JSON.stringify(data));
+        loadBooks();loadStats();
+    }
+
+    async function reserve(isbn){
+        const userId=prompt('Kullanıcı ID:');
+        if(!userId)return;
+        const data=await api('/api/reservations?userId='+userId+'&isbn='+isbn,'POST');
+        showToast(data.id?'Rezervasyon oluşturuldu!':'Hata oluştu!');
+    }
+
+    function logout(){
+        localStorage.clear();
+        window.location.href='/';
+    }
+
+    loadStats();loadBooks();loadUsers();
+</script>
+</body>
+</html>

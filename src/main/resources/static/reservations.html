@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LibraSystem - Rezervasyonlar</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:#fafaf5;display:flex;min-height:100vh}
+        .sidebar{width:220px;background:#fff;border-right:1px solid #e7e5e4;padding:24px 16px;position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column}
+        .logo{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:32px}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;color:#6b7280;margin-bottom:4px;cursor:pointer;text-decoration:none}
+        .nav-item:hover{background:#fef3c7;color:#92400e}
+        .nav-item.active{background:#fef3c7;color:#92400e;font-weight:500}
+        .logout{margin-top:auto;padding:10px 12px;border-radius:8px;font-size:14px;color:#e11d48;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;text-align:left}
+        .main{margin-left:220px;padding:32px;flex:1}
+        .header{margin-bottom:28px}
+        .header h1{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917}
+        .section{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:16px;margin-top:28px}
+        .form-card{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:24px;margin-bottom:32px}
+        .form-row{display:flex;gap:12px;margin-bottom:12px}
+        .form-row input{flex:1;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none}
+        .form-row input:focus{border-color:#d97706}
+        .btn{padding:10px 20px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif}
+        .table-wrap{background:#fff;border:1px solid #e7e5e4;border-radius:12px;overflow:hidden}
+        table{width:100%;border-collapse:collapse}
+        th{background:#fef9f0;padding:12px 16px;font-size:12px;color:#78716c;text-align:left;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+        td{padding:12px 16px;font-size:13px;color:#374151;border-top:1px solid #f5f5f0}
+        .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
+        .b-pending{background:#fef3c7;color:#92400e}
+        .b-fulfilled{background:#f0fdf4;color:#16a34a}
+        .b-cancelled{background:#f5f5f4;color:#78716c}
+        .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid #fecdd3;background:#fff1f2;color:#e11d48;font-family:'Inter',sans-serif}
+        .toast{position:fixed;bottom:24px;right:24px;background:#1c1917;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200}
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo">📚 LibraSystem</div>
+    <a class="nav-item" href="/dashboard.html">Ana Sayfa</a>
+    <a class="nav-item" href="/books.html">Kitaplar</a>
+    <a class="nav-item" href="/borrow.html">Ödünç İşlemleri</a>
+    <a class="nav-item active" href="/reservations.html">Rezervasyonlar</a>
+    <a class="nav-item" href="/users.html">Kullanıcılar</a>
+    <a class="nav-item" href="/reports.html">Raporlar</a>
+    <button class="logout" onclick="logout()">Çıkış Yap</button>
+</div>
+<div class="main">
+    <div class="header"><h1>Rezervasyonlar</h1></div>
+    <div class="section">Yeni Rezervasyon</div>
+    <div class="form-card">
+        <div class="form-row">
+            <input type="number" id="res-user-id" placeholder="Kullanıcı ID"/>
+            <input type="text" id="res-isbn" placeholder="ISBN"/>
+            <button class="btn" onclick="createReservation()">Rezervasyon Oluştur</button>
+        </div>
+    </div>
+    <div class="section">Kullanıcı Rezervasyonları</div>
+    <div class="form-card">
+        <div class="form-row">
+            <input type="number" id="history-user-id" placeholder="Kullanıcı ID"/>
+            <button class="btn" onclick="loadUserReservations()">Göster</button>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>ID</th><th>Kitap</th><th>Kullanıcı</th><th>Tarih</th><th>Durum</th><th>İşlem</th></tr></thead>
+            <tbody id="res-table"></tbody>
+        </table>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+    const token=localStorage.getItem('token');
+    if(!token){window.location.href='/';}
+
+    async function api(url,method='GET',body=null){
+        const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
+        if(body)opts.body=JSON.stringify(body);
+        const res=await fetch(url,opts);
+        return res.json();
+    }
+
+    function showToast(msg){
+        const t=document.getElementById('toast');
+        t.textContent=msg;t.style.display='block';
+        setTimeout(()=>t.style.display='none',3000);
+    }
+
+    function renderTable(data){
+        const tbody=document.getElementById('res-table');
+        if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#78716c;padding:24px">Rezervasyon bulunamadı</td></tr>';return;}
+        tbody.innerHTML=data.map(r=>`
+            <tr>
+                <td>#${r.id}</td>
+                <td>${r.book?.bookTitle||'-'}</td>
+                <td>${r.user?.username||'-'}</td>
+                <td>${r.reservationDate?r.reservationDate.substring(0,10):'-'}</td>
+                <td><span class="badge b-${r.status?.toLowerCase()}">${r.status}</span></td>
+                <td>${r.status==='PENDING'?`<button class="btn-sm" onclick="cancelReservation(${r.id})">İptal Et</button>`:'-'}</td>
+            </tr>`).join('');
+    }
+
+    async function createReservation(){
+        const userId=document.getElementById('res-user-id').value;
+        const isbn=document.getElementById('res-isbn').value;
+        if(!userId||!isbn){showToast('Kullanıcı ID ve ISBN girin!');return;}
+        const data=await api('/api/reservations?userId='+userId+'&isbn='+isbn,'POST');
+        showToast(data.id?'Rezervasyon oluşturuldu!':'Hata: '+JSON.stringify(data));
+    }
+
+    async function loadUserReservations(){
+        const userId=document.getElementById('history-user-id').value;
+        if(!userId){showToast('Kullanıcı ID girin!');return;}
+        const data=await api('/api/reservations/user/'+userId);
+        renderTable(Array.isArray(data)?data:[]);
+    }
+
+    async function cancelReservation(id){
+        const data=await api('/api/reservations/'+id,'DELETE');
+        showToast(data.id?'Rezervasyon iptal edildi!':'Hata oluştu!');
+        const userId=document.getElementById('history-user-id').value;
+        if(userId)loadUserReservations();
+    }
+
+    function logout(){localStorage.clear();window.location.href='/';}
+</script>
+</body>
+</html>
