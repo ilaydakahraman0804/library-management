@@ -12,6 +12,24 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libraryuser -d librarydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: library_backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/librarydb
+      SPRING_DATASOURCE_USERNAME: libraryuser
+      SPRING_DATASOURCE_PASSWORD: librarypass
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
