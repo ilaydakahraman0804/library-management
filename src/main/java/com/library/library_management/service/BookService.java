@@ -30,6 +30,13 @@ public class BookService {
     public List<Book> searchByAuthor(String author) {
         return bookRepository.findByBookAuthorContainingIgnoreCase(author);
     }
+    public List<Book> searchByIsbn(String isbn) {
+        return bookRepository.findByIsbnContainingIgnoreCase(isbn);
+    }
+
+    public List<Book> searchByPublisher(String publisher) {
+        return bookRepository.findByPublisherContainingIgnoreCase(publisher);
+    }
 
     public Page<Book> getAvailableBooks(Pageable pageable) {
         return bookRepository.findByAvailableTrue(pageable);

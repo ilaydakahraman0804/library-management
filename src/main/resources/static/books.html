@@ -18,8 +18,13 @@
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
         .header h1{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917}
         .result-count{font-size:13px;color:#78716c}
+        .section{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:16px;margin-top:8px}
+        .form-card{background:#fff;border:1px solid #e7e5e4;border-radius:12px;padding:24px;margin-bottom:32px}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+        .form-row input,.form-row select{padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;background:#fff}
+        .form-row input:focus,.form-row select:focus{border-color:#d97706}
         .filters{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
-        .filters input{padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;flex:1;min-width:200px}
+        .filters input{padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;flex:1;min-width:160px}
         .filters input:focus{border-color:#d97706}
         .filters button{padding:10px 20px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif}
         .filters button.outline{background:none;border:1px solid #e7e5e4;color:#6b7280}
@@ -31,10 +36,11 @@
         .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
         .available{background:#fef3c7;color:#92400e}
         .borrowed{background:#fff1f2;color:#e11d48}
-        .action-row{display:flex;gap:8px;margin-top:12px}
+        .action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
         .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif}
         .btn-primary{background:#92400e;color:#fff}
         .btn-outline{background:none;border:1px solid #e7e5e4;color:#6b7280}
+        .btn-danger{background:#fff1f2;border:1px solid #fecdd3;color:#e11d48}
         .pagination{display:flex;gap:8px;margin-top:24px;justify-content:center;align-items:center}
         .page-btn{padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #e7e5e4;background:#fff;color:#6b7280;font-family:'Inter',sans-serif}
         .page-btn:disabled{opacity:.4;cursor:not-allowed}
@@ -43,10 +49,11 @@
         .modal.open{display:flex}
         .modal-card{background:#fff;border-radius:16px;padding:32px;width:440px}
         .modal-title{font-family:'Playfair Display',serif;font-size:18px;color:#1c1917;margin-bottom:20px}
-        .modal input{width:100%;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px}
+        .modal input,.modal select{width:100%;padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px;background:#fff}
         .modal-btns{display:flex;gap:8px;margin-top:8px}
         .toast{position:fixed;bottom:24px;right:24px;background:#1c1917;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200}
         .empty{text-align:center;padding:48px;color:#78716c;font-size:14px;grid-column:1/-1}
+        .hidden{display:none}
     </style>
 </head>
 <body>
@@ -65,9 +72,30 @@
         <h1>Kitaplar</h1>
         <div class="result-count" id="result-count"></div>
     </div>
+
+    <div id="manage-section" class="hidden">
+        <div class="section">Yeni Kitap Ekle</div>
+        <div class="form-card">
+            <div class="form-row">
+                <input type="text" id="add-isbn" placeholder="ISBN"/>
+                <input type="text" id="add-title" placeholder="Kitap Adı"/>
+            </div>
+            <div class="form-row">
+                <input type="text" id="add-author" placeholder="Yazar"/>
+                <input type="text" id="add-publisher" placeholder="Yayınevi"/>
+            </div>
+            <div class="form-row">
+                <select id="add-year"><option value="">Yayın Yılı Seçin</option></select>
+            </div>
+            <button style="background:#92400e;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-family:'Inter',sans-serif;font-size:14px" onclick="addBook()">Kitap Ekle</button>
+        </div>
+    </div>
+
     <div class="filters">
         <input type="text" id="title-input" placeholder="Kitap adına göre ara..."/>
         <input type="text" id="author-input" placeholder="Yazara göre ara..."/>
+        <input type="text" id="isbn-input" placeholder="ISBN'e göre ara..."/>
+        <input type="text" id="publisher-input" placeholder="Yayınevine göre ara..."/>
         <button onclick="search()">Ara</button>
         <button class="outline" onclick="loadAvailable(0)">Sadece Müsait</button>
         <button class="outline" onclick="loadAll(0)">Tümünü Göster</button>
@@ -77,6 +105,7 @@
     </div>
     <div class="pagination" id="pagination"></div>
 </div>
+
 <div class="modal" id="borrow-modal">
     <div class="modal-card">
         <div class="modal-title">Kitap Ödünç Al</div>
@@ -88,15 +117,48 @@
         </div>
     </div>
 </div>
+
+<div class="modal" id="edit-modal">
+    <div class="modal-card">
+        <div class="modal-title">Kitap Bilgilerini Güncelle</div>
+        <input type="text" id="edit-isbn" disabled style="background:#f5f5f4"/>
+        <input type="text" id="edit-title" placeholder="Kitap Adı"/>
+        <input type="text" id="edit-author" placeholder="Yazar"/>
+        <input type="text" id="edit-publisher" placeholder="Yayınevi"/>
+        <select id="edit-year"><option value="">Yayın Yılı Seçin</option></select>
+        <div class="modal-btns">
+            <button class="btn-sm btn-primary" onclick="confirmEdit()">Güncelle</button>
+            <button class="btn-sm btn-outline" onclick="closeEditModal()">İptal</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
+    const addYearSelect=document.getElementById('add-year');
+    const editYearSelect=document.getElementById('edit-year');
+    for(let y=2026;y>=1900;y--){
+        const opt1=document.createElement('option');
+        opt1.value=y; opt1.textContent=y;
+        addYearSelect.appendChild(opt1);
+        const opt2=document.createElement('option');
+        opt2.value=y; opt2.textContent=y;
+        editYearSelect.appendChild(opt2);
+    }
+
     const token=localStorage.getItem('token');
     if(!token){window.location.href='/';}
     const role=localStorage.getItem('role');
     if(role==='STUDENT'){
         document.querySelectorAll('a[href="/users.html"], a[href="/reports.html"]').forEach(el=>el.style.display='none');
     }
+    const canManage = role==='ADMIN'||role==='LIBRARIAN';
+    if(canManage){
+        document.getElementById('manage-section').classList.remove('hidden');
+    }
+
     let selectedIsbn='';
+    let editingIsbn='';
     let mode='all';
 
     async function api(url,method='GET',body=null){
@@ -119,11 +181,13 @@
             <div class="book-card">
                 <div class="book-title">${b.bookTitle||''}</div>
                 <div class="book-author">${b.bookAuthor||''}</div>
-                <div class="book-isbn">ISBN: ${b.isbn||''}</div>
+                <div class="book-isbn">ISBN: ${b.isbn||''} ${b.publisher?'· '+b.publisher:''}</div>
                 <span class="badge ${b.available?'available':'borrowed'}">${b.available?'Müsait':'Ödünç Alındı'}</span>
                 <div class="action-row">
                     ${b.available?`<button class="btn-sm btn-primary" onclick="openBorrow('${b.isbn}','${(b.bookTitle||'').replace(/'/g,"\\'")}')">Ödünç Al</button>`:''}
                     ${!b.available?`<button class="btn-sm btn-outline" onclick="reserve('${b.isbn}')">Rezerve Et</button>`:''}
+                    ${canManage?`<button class="btn-sm btn-outline" onclick='openEdit(${JSON.stringify(b)})'>Düzenle</button>`:''}
+                    ${canManage?`<button class="btn-sm btn-danger" onclick="deleteBook('${b.isbn}')">Sil</button>`:''}
                 </div>
             </div>`).join('');
     }
@@ -161,9 +225,13 @@
     async function search(){
         const title=document.getElementById('title-input').value;
         const author=document.getElementById('author-input').value;
+        const isbn=document.getElementById('isbn-input').value;
+        const publisher=document.getElementById('publisher-input').value;
         let data;
         if(title) data=await api('/api/books/search/title?title='+encodeURIComponent(title));
         else if(author) data=await api('/api/books/search/author?author='+encodeURIComponent(author));
+        else if(isbn) data=await api('/api/books/search/isbn?isbn='+encodeURIComponent(isbn));
+        else if(publisher) data=await api('/api/books/search/publisher?publisher='+encodeURIComponent(publisher));
         else { loadAll(0); return; }
         renderBooks(Array.isArray(data)?data.slice(0,50):[]);
         document.getElementById('result-count').textContent=(Array.isArray(data)?data.length:0)+' sonuç bulundu (ilk 50 gösteriliyor)';
@@ -194,6 +262,55 @@
         if(!userId)return;
         const data=await api('/api/reservations?userId='+userId+'&isbn='+isbn,'POST');
         showToast(data.id?'Rezervasyon oluşturuldu!':'Hata oluştu!');
+    }
+
+    async function addBook(){
+        const isbn=document.getElementById('add-isbn').value;
+        const bookTitle=document.getElementById('add-title').value;
+        const bookAuthor=document.getElementById('add-author').value;
+        const publisher=document.getElementById('add-publisher').value;
+        const yearOfPublication=document.getElementById('add-year').value;
+        if(!isbn||!bookTitle){showToast('ISBN ve kitap adı zorunlu!');return;}
+        const data=await api('/api/books','POST',{isbn,bookTitle,bookAuthor,publisher,yearOfPublication:yearOfPublication?parseInt(yearOfPublication):null,available:true});
+        showToast(data.isbn?'Kitap eklendi!':'Hata: '+JSON.stringify(data));
+        document.getElementById('add-isbn').value='';
+        document.getElementById('add-title').value='';
+        document.getElementById('add-author').value='';
+        document.getElementById('add-publisher').value='';
+        document.getElementById('add-year').value='';
+        goToPage(0);
+    }
+
+    function openEdit(book){
+        editingIsbn=book.isbn;
+        document.getElementById('edit-isbn').value=book.isbn;
+        document.getElementById('edit-title').value=book.bookTitle||'';
+        document.getElementById('edit-author').value=book.bookAuthor||'';
+        document.getElementById('edit-publisher').value=book.publisher||'';
+        document.getElementById('edit-year').value=book.yearOfPublication||'';
+        document.getElementById('edit-modal').classList.add('open');
+    }
+
+    function closeEditModal(){
+        document.getElementById('edit-modal').classList.remove('open');
+    }
+
+    async function confirmEdit(){
+        const bookTitle=document.getElementById('edit-title').value;
+        const bookAuthor=document.getElementById('edit-author').value;
+        const publisher=document.getElementById('edit-publisher').value;
+        const yearOfPublication=document.getElementById('edit-year').value;
+        const data=await api('/api/books/'+editingIsbn,'PUT',{bookTitle,bookAuthor,publisher,yearOfPublication:yearOfPublication?parseInt(yearOfPublication):null,available:true});
+        closeEditModal();
+        showToast(data.isbn?'Kitap güncellendi!':'Hata oluştu!');
+        goToPage(0);
+    }
+
+    async function deleteBook(isbn){
+        if(!confirm('Bu kitabı silmek istediğinize emin misiniz?'))return;
+        await api('/api/books/'+isbn,'DELETE');
+        showToast('Kitap silindi!');
+        goToPage(0);
     }
 
     function logout(){localStorage.clear();window.location.href='/';}

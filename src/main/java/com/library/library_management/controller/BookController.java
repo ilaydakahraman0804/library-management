@@ -47,6 +47,15 @@ public class BookController {
     public List<Book> searchByAuthor(@RequestParam String author) {
         return bookService.searchByAuthor(author);
     }
+    @GetMapping("/search/isbn")
+    public List<Book> searchByIsbn(@RequestParam String isbn) {
+        return bookService.searchByIsbn(isbn);
+    }
+
+    @GetMapping("/search/publisher")
+    public List<Book> searchByPublisher(@RequestParam String publisher) {
+        return bookService.searchByPublisher(publisher);
+    }
 
     @GetMapping("/available")
     public Map<String, Object> getAvailableBooks(

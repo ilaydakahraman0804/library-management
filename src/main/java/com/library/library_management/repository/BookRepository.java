@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 public interface BookRepository extends JpaRepository<Book, String> {
     List<Book> findByBookTitleContainingIgnoreCase(String title);
     List<Book> findByBookAuthorContainingIgnoreCase(String author);
+    List<Book> findByIsbnContainingIgnoreCase(String isbn);
+    List<Book> findByPublisherContainingIgnoreCase(String publisher);
     List<Book> findByAvailableTrue();
     Page<Book> findByAvailableTrue(Pageable pageable);
 }
