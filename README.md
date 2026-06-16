@@ -95,6 +95,7 @@ Sistemi test etmek için aşağıdaki örnek kullanıcı bilgileri kullanılabil
 
 - admin - admin123 - Admin -
 - öğrenci01 - ogrenci123 - Öğrenci -
+- librarian01 - librarian123 - Kütüphaneci -
 
 ## Proje Yapısı
 
