@@ -56,6 +56,10 @@ public class ReportController {
                     Map<String, Object> item = new HashMap<>();
                     item.put("isbn", e.getKey());
                     item.put("borrowCount", e.getValue());
+                    bookRepository.findById(e.getKey()).ifPresent(b -> {
+                        item.put("bookTitle", b.getBookTitle());
+                        item.put("bookAuthor", b.getBookAuthor());
+                    });
                     return item;
                 })
                 .collect(Collectors.toList());
@@ -76,6 +80,10 @@ public class ReportController {
                     Map<String, Object> item = new HashMap<>();
                     item.put("userId", e.getKey());
                     item.put("borrowCount", e.getValue());
+                    userRepository.findById(e.getKey()).ifPresent(u -> {
+                        item.put("username", u.getUsername());
+                        item.put("role", u.getRole());
+                    });
                     return item;
                 })
                 .collect(Collectors.toList());

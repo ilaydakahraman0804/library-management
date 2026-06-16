@@ -29,6 +29,7 @@
         .badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:500}
         .available{background:#fef3c7;color:#92400e}
         .overdue{background:#fff1f2;color:#e11d48}
+        .rank{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#fef3c7;color:#92400e;font-size:11px;font-weight:600}
         .btn{padding:10px 20px;background:#92400e;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:16px}
         .toast{position:fixed;bottom:24px;right:24px;background:#1c1917;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;display:none;z-index:200}
         .monthly-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -39,7 +40,7 @@
 </head>
 <body>
 <div class="sidebar">
-    <div class="logo">📚 LibraSystem</div>
+    <div class="logo">📚 Kütüphane Yönetim Sistemi</div>
     <a class="nav-item" href="/dashboard.html">Ana Sayfa</a>
     <a class="nav-item" href="/books.html">Kitaplar</a>
     <a class="nav-item" href="/borrow.html">Ödünç İşlemleri</a>
@@ -57,6 +58,23 @@
         <div class="stat"><div class="stat-val" id="overdueBooks">-</div><div class="stat-lbl">Gecikmiş Kitap</div></div>
     </div>
     <button class="btn" onclick="checkOverdue()">Gecikmiş Kitapları Güncelle</button>
+
+    <div class="section">En Çok Ödünç Alınan Kitaplar</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Kitap</th><th>Yazar</th><th>ISBN</th><th>Ödünç Sayısı</th></tr></thead>
+            <tbody id="most-borrowed-table"></tbody>
+        </table>
+    </div>
+
+    <div class="section">Aktif Kullanıcılar</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Kullanıcı</th><th>Rol</th><th>Ödünç Sayısı</th></tr></thead>
+            <tbody id="active-users-table"></tbody>
+        </table>
+    </div>
+
     <div class="section">Ödünç Alınan Kitaplar</div>
     <div class="table-wrap">
         <table>
@@ -79,10 +97,10 @@
     const token=localStorage.getItem('token');
     if(!token){window.location.href='/';}
     const role=localStorage.getItem('role');
-if(role==='STUDENT'){
-    alert('Bu sayfaya erişim yetkiniz yok!');
-    window.location.href='/dashboard.html';
-}
+    if(role==='STUDENT'){
+        alert('Bu sayfaya erişim yetkiniz yok!');
+        window.location.href='/dashboard.html';
+    }
 
     async function api(url,method='GET',body=null){
         const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
@@ -103,6 +121,33 @@ if(role==='STUDENT'){
         document.getElementById('availableBooks').textContent=data.availableBooks?.toLocaleString()||'-';
         document.getElementById('activeBorrows').textContent=data.activeBorrows?.toLocaleString()||'-';
         document.getElementById('overdueBooks').textContent=data.overdueBooks?.toLocaleString()||'-';
+    }
+
+    async function loadMostBorrowed(){
+        const data=await api('/api/reports/most-borrowed');
+        const tbody=document.getElementById('most-borrowed-table');
+        if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#78716c;padding:24px">Henüz veri yok</td></tr>';return;}
+        tbody.innerHTML=data.map((item,i)=>`
+            <tr>
+                <td><span class="rank">${i+1}</span></td>
+                <td>${item.bookTitle||'-'}</td>
+                <td>${item.bookAuthor||'-'}</td>
+                <td>${item.isbn||'-'}</td>
+                <td>${item.borrowCount}</td>
+            </tr>`).join('');
+    }
+
+    async function loadActiveUsers(){
+        const data=await api('/api/reports/active-users');
+        const tbody=document.getElementById('active-users-table');
+        if(!data||data.length===0){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#78716c;padding:24px">Henüz veri yok</td></tr>';return;}
+        tbody.innerHTML=data.map((item,i)=>`
+            <tr>
+                <td><span class="rank">${i+1}</span></td>
+                <td>${item.username||'Kullanıcı #'+item.userId}</td>
+                <td>${item.role||'-'}</td>
+                <td>${item.borrowCount}</td>
+            </tr>`).join('');
     }
 
     async function loadBorrowed(){
@@ -151,7 +196,7 @@ if(role==='STUDENT'){
 
     function logout(){localStorage.clear();window.location.href='/';}
 
-    loadSummary();loadBorrowed();loadOverdue();loadMonthly();
+    loadSummary();loadMostBorrowed();loadActiveUsers();loadBorrowed();loadOverdue();loadMonthly();
 </script>
 </body>
 </html>
