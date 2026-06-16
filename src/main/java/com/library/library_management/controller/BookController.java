@@ -3,9 +3,13 @@ package com.library.library_management.controller;
 import com.library.library_management.entity.Book;
 import com.library.library_management.service.BookService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/books")
@@ -15,8 +19,16 @@ public class BookController {
     private final BookService bookService;
 
     @GetMapping
-    public List<Book> getAllBooks() {
-        return bookService.getAllBooks();
+    public Map<String, Object> getAllBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
+        Page<Book> result = bookService.getAllBooks(PageRequest.of(page, size));
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", result.getContent());
+        response.put("totalPages", result.getTotalPages());
+        response.put("totalElements", result.getTotalElements());
+        response.put("currentPage", page);
+        return response;
     }
 
     @GetMapping("/{isbn}")
@@ -37,8 +49,16 @@ public class BookController {
     }
 
     @GetMapping("/available")
-    public List<Book> getAvailableBooks() {
-        return bookService.getAvailableBooks();
+    public Map<String, Object> getAvailableBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "9") int size) {
+        Page<Book> result = bookService.getAvailableBooks(PageRequest.of(page, size));
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", result.getContent());
+        response.put("totalPages", result.getTotalPages());
+        response.put("totalElements", result.getTotalElements());
+        response.put("currentPage", page);
+        return response;
     }
 
     @PostMapping

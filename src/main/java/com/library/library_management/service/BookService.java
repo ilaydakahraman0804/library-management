@@ -3,6 +3,8 @@ package com.library.library_management.service;
 import com.library.library_management.entity.Book;
 import com.library.library_management.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
@@ -13,8 +15,8 @@ public class BookService {
 
     private final BookRepository bookRepository;
 
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
+    public Page<Book> getAllBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable);
     }
 
     public Optional<Book> getBookByIsbn(String isbn) {
@@ -29,8 +31,8 @@ public class BookService {
         return bookRepository.findByBookAuthorContainingIgnoreCase(author);
     }
 
-    public List<Book> getAvailableBooks() {
-        return bookRepository.findByAvailableTrue();
+    public Page<Book> getAvailableBooks(Pageable pageable) {
+        return bookRepository.findByAvailableTrue(pageable);
     }
 
     public Book saveBook(Book book) {

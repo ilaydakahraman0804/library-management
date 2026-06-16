@@ -17,6 +17,7 @@
         .main{margin-left:220px;padding:32px;flex:1}
         .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
         .header h1{font-family:'Playfair Display',serif;font-size:24px;color:#1c1917}
+        .result-count{font-size:13px;color:#78716c}
         .filters{display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap}
         .filters input{padding:10px 14px;border:1px solid #e7e5e4;border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;outline:none;flex:1;min-width:200px}
         .filters input:focus{border-color:#d97706}
@@ -34,9 +35,10 @@
         .btn-sm{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif}
         .btn-primary{background:#92400e;color:#fff}
         .btn-outline{background:none;border:1px solid #e7e5e4;color:#6b7280}
-        .pagination{display:flex;gap:8px;margin-top:24px;justify-content:center}
+        .pagination{display:flex;gap:8px;margin-top:24px;justify-content:center;align-items:center}
         .page-btn{padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #e7e5e4;background:#fff;color:#6b7280;font-family:'Inter',sans-serif}
-        .page-btn.active{background:#92400e;color:#fff;border-color:#92400e}
+        .page-btn:disabled{opacity:.4;cursor:not-allowed}
+        .page-info{font-size:13px;color:#78716c;padding:0 8px}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:100;justify-content:center;align-items:center}
         .modal.open{display:flex}
         .modal-card{background:#fff;border-radius:16px;padding:32px;width:440px}
@@ -61,13 +63,14 @@
 <div class="main">
     <div class="header">
         <h1>Kitaplar</h1>
+        <div class="result-count" id="result-count"></div>
     </div>
     <div class="filters">
         <input type="text" id="title-input" placeholder="Kitap adına göre ara..."/>
         <input type="text" id="author-input" placeholder="Yazara göre ara..."/>
         <button onclick="search()">Ara</button>
-        <button class="outline" onclick="loadAvailable()">Sadece Müsait</button>
-        <button class="outline" onclick="loadAll()">Tümünü Göster</button>
+        <button class="outline" onclick="loadAvailable(0)">Sadece Müsait</button>
+        <button class="outline" onclick="loadAll(0)">Tümünü Göster</button>
     </div>
     <div class="books-grid" id="books-grid">
         <div class="empty">Kitaplar yükleniyor...</div>
@@ -89,9 +92,12 @@
 <script>
     const token=localStorage.getItem('token');
     if(!token){window.location.href='/';}
+    const role=localStorage.getItem('role');
+    if(role==='STUDENT'){
+        document.querySelectorAll('a[href="/users.html"], a[href="/reports.html"]').forEach(el=>el.style.display='none');
+    }
     let selectedIsbn='';
-    let currentPage=0;
-    const pageSize=9;
+    let mode='all';
 
     async function api(url,method='GET',body=null){
         const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
@@ -122,14 +128,34 @@
             </div>`).join('');
     }
 
-    async function loadAll(){
-        const data=await api('/api/books');
-        renderBooks(Array.isArray(data)?data.slice(0,pageSize):[] );
+    function renderPagination(currentPage,totalPages,totalElements){
+        document.getElementById('result-count').textContent=totalElements.toLocaleString()+' kitap bulundu';
+        const pag=document.getElementById('pagination');
+        if(totalPages<=1){pag.innerHTML='';return;}
+        let html='';
+        html+=`<button class="page-btn" ${currentPage===0?'disabled':''} onclick="goToPage(${currentPage-1})">‹ Önceki</button>`;
+        html+=`<span class="page-info">Sayfa ${currentPage+1} / ${totalPages}</span>`;
+        html+=`<button class="page-btn" ${currentPage>=totalPages-1?'disabled':''} onclick="goToPage(${currentPage+1})">Sonraki ›</button>`;
+        pag.innerHTML=html;
     }
 
-    async function loadAvailable(){
-        const data=await api('/api/books/available');
-        renderBooks(Array.isArray(data)?data.slice(0,pageSize):[]);
+    function goToPage(page){
+        if(mode==='available') loadAvailable(page);
+        else loadAll(page);
+    }
+
+    async function loadAll(page=0){
+        mode='all';
+        const data=await api('/api/books?page='+page+'&size=9');
+        renderBooks(data.content);
+        renderPagination(data.currentPage,data.totalPages,data.totalElements);
+    }
+
+    async function loadAvailable(page=0){
+        mode='available';
+        const data=await api('/api/books/available?page='+page+'&size=9');
+        renderBooks(data.content);
+        renderPagination(data.currentPage,data.totalPages,data.totalElements);
     }
 
     async function search(){
@@ -138,8 +164,10 @@
         let data;
         if(title) data=await api('/api/books/search/title?title='+encodeURIComponent(title));
         else if(author) data=await api('/api/books/search/author?author='+encodeURIComponent(author));
-        else data=await api('/api/books');
-        renderBooks(Array.isArray(data)?data.slice(0,pageSize):[]);
+        else { loadAll(0); return; }
+        renderBooks(Array.isArray(data)?data.slice(0,50):[]);
+        document.getElementById('result-count').textContent=(Array.isArray(data)?data.length:0)+' sonuç bulundu (ilk 50 gösteriliyor)';
+        document.getElementById('pagination').innerHTML='';
     }
 
     function openBorrow(isbn,title){
@@ -158,7 +186,7 @@
         const data=await api('/api/borrow?userId='+userId+'&isbn='+selectedIsbn,'POST');
         closeModal();
         showToast(data.id?'Kitap başarıyla ödünç alındı!':'Hata: '+JSON.stringify(data));
-        loadAll();
+        goToPage(0);
     }
 
     async function reserve(isbn){
@@ -170,7 +198,7 @@
 
     function logout(){localStorage.clear();window.location.href='/';}
 
-    loadAll();
+    loadAll(0);
 </script>
 </body>
 </html>

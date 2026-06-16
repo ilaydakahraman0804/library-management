@@ -76,6 +76,11 @@
 <script>
     const token=localStorage.getItem('token');
     if(!token){window.location.href='/';}
+    const role=localStorage.getItem('role');
+    if(role==='STUDENT'){
+        alert('Bu sayfaya erişim yetkiniz yok!');
+        window.location.href='/dashboard.html';
+    }
 
     async function api(url,method='GET',body=null){
         const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};
@@ -101,7 +106,7 @@
                 <td>${u.email}</td>
                 <td><span class="tag tag-${u.role?.toLowerCase()}">${u.role}</span></td>
                 <td>${u.createdAt?u.createdAt.substring(0,10):'-'}</td>
-                <td><button class="btn-sm" onclick="deleteUser(${u.id})">Sil</button></td>
+                <td>${role==='ADMIN'?`<button class="btn-sm" onclick="deleteUser(${u.id})">Sil</button>`:'-'}</td>
             </tr>`).join('');
     }
 
@@ -109,9 +114,9 @@
         const username=document.getElementById('reg-username').value;
         const email=document.getElementById('reg-email').value;
         const password=document.getElementById('reg-password').value;
-        const role=document.getElementById('reg-role').value;
+        const userRole=document.getElementById('reg-role').value;
         if(!username||!email||!password){showToast('Tüm alanları doldurun!');return;}
-        const data=await api('/api/users/register','POST',{username,email,password,role});
+        const data=await api('/api/users/register','POST',{username,email,password,role:userRole});
         showToast(data.id?'Kullanıcı eklendi!':'Hata: '+JSON.stringify(data));
         loadUsers();
     }

@@ -74,6 +74,10 @@
 <script>
     const token=localStorage.getItem('token');
     if(!token){window.location.href='/';}
+    const role=localStorage.getItem('role');
+if(role==='STUDENT'){
+    document.querySelectorAll('a[href="/users.html"], a[href="/reports.html"]').forEach(el=>el.style.display='none');
+}
 
     async function api(url,method='GET',body=null){
         const opts={method,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};

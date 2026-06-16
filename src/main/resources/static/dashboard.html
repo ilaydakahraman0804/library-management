@@ -109,6 +109,9 @@
     const role=localStorage.getItem('role');
     if(!token){window.location.href='/';}
     document.getElementById('user-badge').textContent=username+' ('+role+')';
+    if(role==='STUDENT'){
+    document.querySelectorAll('a[href="/users.html"], a[href="/reports.html"]').forEach(el=>el.style.display='none');
+}
     let selectedIsbn='';
 
     async function api(url,method='GET',body=null){
